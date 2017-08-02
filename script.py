@@ -1,42 +1,11 @@
 #!/usr/bin/python
 import os
+import sys
 import random
 import time
-from Tkinter import *
 
-
-class Presentation(object):
-    def __init__(self):
-        # initiate settings.screen
-        self.root = Tk()
-        self.root.title('RPGame')
-        self.root.geometry(settings.SCREEN)
-        self.root.configure(background='black')
-
-        self.root.mainloop()
-
-
-class settings(object):
-    SCREEN = '800x650'
-    FORMATED_OPTIONS = "[{}]  "
-    MENU = ["move", "select item", "exit"]
-    INFO = {"location": "forest", "health": 100, "energy": 100,
-            "items": {}, "selected_item": None}
-    SITES = {
-        "city": {
-            "options": {"house", "market", "smith"},
-        },
-        "forest": {
-            "options": {
-                "Pick wood": {"energy": -10, "wood": 1},
-                "Plant a tree": {"energy": -20, "tree": -1},
-                "Pick apples": {"energy": -5, "apples": 1},
-                },
-            "probabilities": {"tree": 0.1, "apples": 0.2},
-            "wood": 2, "apples": 10,
-        },
-        "mine": {},
-    }
+import settings
+from places import Places
 
 
 class Logic(object):
@@ -114,8 +83,8 @@ class Logic(object):
     def plant_a_tree(self):
         if not self.check_if_you_are_in_the_forest():
             return
-        if "tree" in self.gon.items:
-            self.items["tree"] -= 1
+        if "wood" in self.gon.items:
+            self.items["wood"] -= 1
             # check if you still have any trees
             if self.items["tree"] == 0:
                 self.items.pop("tree")
@@ -202,29 +171,6 @@ class Person(object):
         else:
             print "that item is not on item you own"
             time.sleep(3)
-
-
-class Places(object):
-    class City(object):
-        def __init__(self, logic=None, market=None):
-            self.logic = logic
-            self.market = market
-
-        def print_greetings(self):
-            print "\nI entered the city"
-            print "have a nice day"
-
-    class Forest(object):
-        def __init__(
-            self, logic=None,
-            wood=settings.SITES["forest"]["wood"],
-            apples=settings.SITES["forest"]["apples"]):
-            self.wood = wood
-            self.apples = apples
-
-    class Mine(object):
-        def __init__(self, logic=None):
-            pass
 
 
 def run():
