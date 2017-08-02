@@ -218,7 +218,7 @@ class Places(object):
         def __init__(
             self, logic=None,
             wood=settings.SITES["forest"]["wood"],
-            apples=settings.SITES["forest"]["wood"]):
+            apples=settings.SITES["forest"]["apples"]):
             self.wood = wood
             self.apples = apples
 
