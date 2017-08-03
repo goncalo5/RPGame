@@ -31,7 +31,7 @@ class Logic(object):
     def check_if_you_are_in_the_forest(self):
         print "check if you are in the forest"
         # check if you are in the forest
-        if self.gon.location != "forest":
+        if self.gon.location.value != "forest":
             print "you are not in the forest"
             raw_input()
             return False
@@ -45,25 +45,40 @@ class Logic(object):
             print "there are no wood in the forest, please plant some tree"
             raw_input()
             return False
-        setattr(self.forest, resource, resource_in_forest - quantity)
+        #setattr(self.forest, resource, resource_in_forest - quantity)
         return True
 
-    def check_if_you_have_enough_energy(self, energy):
-        # check if you have enough energy
-        if self.gon.energy < energy:
-            print "you need to eat, your have {}% the energy".format(
-                  self.gon.energy)
+    def check_if_you_have_enough_resource(self, resource, quantity):
+        print "check if you have enough {}".format(resource)
+        if resource == "energy":
+            res = self.gon.energy.value
+            print "the resource is energy", res
+        else:
+            res = self.gon.items.value[resource]
+            #res = getattr(self.gon, "items")[resource]
+        if res < quantity:
+            print "you need more {}, your have {} of {}".format(
+                  res, quantity, res)
             raw_input()
             return False
-        self.gon.energy -= energy
+        #setattr(self.gon, resource, res - quantity)
         return True
 
     def add_item2items(self, item, quantity=1):  # item = "wood"
-        if item in self.gon.items:
-            self.gon.items[item] += quantity
+        print "add item"
+        print self.gon.items.value
+        if item in self.gon.items.value:
+            self.gon.items.value[item] += quantity
         else:
-            self.gon.items[item] = quantity
-        print "{}  +{} => {}".format(item, quantity, self.gon.items[item])
+            self.gon.items.value[item] = quantity
+        print "{}  +{} => {}".format(item, quantity, self.gon.items.value[item])
+
+    def remove_item2items(self, item, quantity=1):  # item = "wood"
+        if item in self.gon.items.value:
+            self.gon.items.value[item] -= quantity
+        else:
+            self.gon.items.value[item] = quantity
+        print "{}  -{} => {}".format(item, quantity, self.gon.items.value[item])
 
     # Actions in forest
     def pick_wood(self):
@@ -75,33 +90,45 @@ class Logic(object):
         energy = abs(settings.SITES["forest"]["options"]["Pick wood"]["energy"])
         if not self.check_if_the_forest_have_enough_resource(resource="wood", quantity=wood):
             return
-        if not self.check_if_you_have_enough_energy(energy):
+        if not self.check_if_you_have_enough_resource("energy", energy):
             return
+        self.forest.wood -= wood
         self.add_item2items(item="wood", quantity=wood)
         raw_input()
 
     def plant_a_tree(self):
         if not self.check_if_you_are_in_the_forest():
             return
-        if "wood" in self.gon.items:
-            self.items["wood"] -= 1
-            # check if you still have any trees
-            if self.items["tree"] == 0:
-                self.items.pop("tree")
-            self.forest.wood += settings.PLANT_A_TREE["wood"]
+        wood_lost = settings.SITES["forest"]["options"]["Plant a tree"]["wood"]
+        wood_added = settings.SITES["forest"]["options"]["Plant a tree"]["new_tree"]
+        energy = abs(settings.SITES["forest"]["options"]["Plant a tree"]["energy"])
+        if not self.check_if_you_have_enough_resource("energy", energy):
+            return
+        if not self.check_if_you_have_enough_resource("wood", wood_lost):
+            return
+        if "wood" in self.gon.items.value:
+            self.gon.items.value["wood"] -= 1
+            self.forest.wood += wood_added
+            print "wood in forest: {}".format(self.forest.wood)
         else:
             print "\nyou do not have any tree to plant"
             raw_input()
+            return
+        self.forest.wood += wood_added
+        self.remove_item2items(item="wood", quantity=1)
+        raw_input()
 
     def pick_apples(self):
+        print "pick some apple :)"
         if not self.check_if_you_are_in_the_forest():
             return
         apples = settings.SITES["forest"]["options"]["Pick apples"]["apples"]
         energy = abs(settings.SITES["forest"]["options"]["Pick apples"]["energy"])
         if not self.check_if_the_forest_have_enough_resource(resource="apples", quantity=apples):
             return
-        if not self.check_if_you_have_enough_energy(energy):
+        if not self.check_if_you_have_enough_resource("energy", energy):
             return
+        self.forest.apples -= 1
         self.add_item2items(item="apples", quantity=apples)
         raw_input()
 
@@ -109,22 +136,39 @@ class Logic(object):
 class Person(object):
     def __init__(self, logic=None, attributes=settings.INFO):
         self.logic = logic
+
+        class Feature(object):
+            def __init__(self, name, value):
+                self.name = name
+                self.value = value
+
+        self.info = []  # [self.location, ..]
         for attribute, attribute_value in attributes.iteritems():
-            setattr(self, attribute, attribute_value)
+            print attribute, attribute_value
+            # self.location = Feature("location", "forest")
+            setattr(self, attribute, Feature(attribute, attribute_value))
+            self.info.append(getattr(self, attribute))
+        print self.location.name
         self.selected_item = None
 
     def print_menu(self):
+        print "MENU"
         os.system('clear')
         self.get_information()
+        print self.location.name
         self.print_options()
 
     def get_information(self):
-        for feature in settings.INFO:
-            print "{}: {}".format(feature, getattr(self, feature))
+        print "geting information"
+        for feature in self.info:
+            print "{}: {}".format(
+                getattr(feature, "name"), getattr(feature, "value"))
         print
 
     def print_options(self):
-        current_place = self.location
+        print "options:\n"
+        print self.location.name
+        current_place = self.location.value
         for option in settings.SITES[current_place]["options"]:
             print settings.FORMATED_OPTIONS.format(option),
         for option in settings.MENU:
@@ -157,7 +201,8 @@ class Person(object):
             print settings.FORMATED_OPTIONS.format(option),
         where = raw_input("\nwhere you want to go? ")
         if where in settings.SITES:
-            setattr(self, 'location', where)
+            self.location.value = where
+            #setattr(self, 'location', where)
         else:
             print "don't know that place/n"
             self.move()

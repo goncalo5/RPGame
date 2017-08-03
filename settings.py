@@ -10,7 +10,7 @@ SITES = {
     "forest": {
         "options": {
             "Pick wood": {"energy": -10, "wood": 1},
-            "Plant a tree": {"energy": -20, "tree": -1},
+            "Plant a tree": {"energy": -20, "wood": -1, "new_tree": 3},
             "Pick apples": {"energy": -5, "apples": 1},
             },
         "probabilities": {"tree": 0.1, "apples": 0.2},
